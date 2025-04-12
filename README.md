@@ -2,7 +2,7 @@
 
 This project is a fun remake of the classic **Pong** game, built using an **Arduino** and displayed on a **TV screen** using the [TVout library](https://code.google.com/archive/p/arduino-tvout/). You can play solo against a computer or battle a friend in 1v1 mode!
 
-📸 *Example circuit setup (add image below):*
+📸 *Example circuit setup:*
 
 ![Game Components Setup](./images/components.png)
 

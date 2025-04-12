@@ -4,7 +4,7 @@ This project is a fun remake of the classic **Pong** game, built using an **Ardu
 
 📸 *Example circuit setup (add image below):*
 
-![Game Components Setup](components.png)
+![Game Components Setup](./images/components.png)
 
 ## 🎮 Features
 

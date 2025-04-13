@@ -8,7 +8,7 @@
 #define SCREEN_HEIGHT   96   // Maximum height
 #define PLAYER1_INPUT   A1   // Player 1 control input
 #define PLAYER2_INPUT   A2   // Player 2 control input
-#define TOTAL_POINTS    5 
+#define TOTAL_POINTS    5
 #define MODE_SWITCH_PIN 5  // Pin connected to toggle switch
 
 
@@ -245,7 +245,7 @@ void checkMotion()
         set_time();
         game.ball.speed.x = 1; // Positive = toward right
         game.ball.speed.y = random(0, 2) == 0 ? 1 : -1; // Random up/down
-         
+
       }
     }
     else {
@@ -292,7 +292,11 @@ void gameover() {
   soundGame(200, 200);
   delay(50);
   soundGame(400, 50);
-  delay(9750); 
+  delay(9750);
+  TV.clear_screen();
+  startup();
+  drawScene();
+  set_time();
 }
 
 
@@ -325,7 +329,7 @@ void change_difficulty() {
   }
 }
 
-void set_time(){
+void set_time() {
   game.prev_time1 = millis();
   game.prev_time2 = game.prev_time1;
   game.prev_time3 = game.prev_time1;
@@ -335,7 +339,6 @@ void setup() {
   TV.begin(PAL, SCREEN_WIDTH, SCREEN_HEIGHT);
   startup();
   drawScene();
-  //set_time();
 }
 
 
@@ -356,10 +359,5 @@ void loop() {
   if (game.score1 == TOTAL_POINTS || game.score2 == TOTAL_POINTS) {
     game.game_over = true;
     gameover();
-    delay(30);
-    TV.clear_screen();
-    startup();
-    drawScene();
-    set_time();
   }
 }

@@ -8,7 +8,7 @@
 #define SCREEN_HEIGHT   96   // Maximum height
 #define PLAYER1_INPUT   A1   // Player 1 control input
 #define PLAYER2_INPUT   A2   // Player 2 control input
-#define TOTAL_POINTS    2   // fixme change to 5  
+#define TOTAL_POINTS    5 
 #define MODE_SWITCH_PIN 5  // Pin connected to toggle switch
 
 
@@ -47,9 +47,6 @@ typedef struct {
   bool is_single_player;
   bool game_on;
   bool game_over;
-  bool first_start;
-  unsigned long time_off;
-  unsigned long goal_time;
 } GameState;
 
 //global vars
@@ -71,12 +68,10 @@ void startup () {
   // initalize all variables
   game.game_on = false;  // Make sure game doesn't start immediately
   game.game_over = false;
-  game.first_start = true;
   game.speed = 1;
   game.ball_size = 1;
   game.paddle_size = 12.5;  // Starting paddle size as float
   game.paddle_difficulty = 1;
-  game.time_off = 0;
 
   // Clear all struct variables to avoid garbage values
   Paddle player1 = {0};
@@ -126,7 +121,7 @@ void startup () {
   soundGame(300, 200);
   delay(200);
   soundGame(400, 200);
-  TV.delay(1600); // fixme change to 4600
+  TV.delay(4600);
 }
 
 void drawScene()
@@ -199,21 +194,20 @@ void moveBall()
     if (game.ball.position.y >= 86 - game.ball.size / 2 || game.ball.position.y <= 9 + game.ball.size / 2 ) { // ball touching bottom or top line
       game.ball.speed.y = -1 * game.ball.speed.y;
       soundGame(300, 30);
-      delay(20);
+      delay(20); // for sound clearity
       soundGame(600, 30);
     }
 
-    if (game.ball.position.x >= 127 - game.ball.size / 2) { // ball touching player 1 side
+    if ((game.ball.position.x >= 127 - game.ball.size / 2) && (game.ball.speed.x > 0)) { // ball touching player 1 side
       game.score2++;
       soundGame(400, 30);
-      game.game_on = false;
-      game.goal_time = millis();
-      resetBall();
+      game.ball.speed.x = -1 * game.ball.speed.x;
     }
 
-    // Improved collision detection for player 1 paddle
+    // Collision detection for player 1 paddle
     if (game.ball.position.x >= game.player1.position.x - game.ball.size / 2 &&
-        game.ball.position.x <= game.player1.position.x + 1) { // ball touching player 1 paddle
+        game.ball.position.x <= game.player1.position.x + 1
+        && game.ball.speed.x > 0) { // ball touching player 1 paddle
       if (game.ball.position.y <= (game.player1.position.y + game.paddle_size) &&
           game.ball.position.y >= (game.player1.position.y - game.paddle_size)) {
         game.ball.speed.x = -1 * game.ball.speed.x;
@@ -221,17 +215,16 @@ void moveBall()
       }
     }
 
-    if (game.ball.position.x <= 21 + game.ball.size / 2) { // ball touching player 2/comp side
+    if ((game.ball.position.x <= 22 + game.ball.size / 2) && (game.ball.speed.x < 0)) { // ball touching player 2/comp side
       game.score1++;
       soundGame(400, 30);
-      game.game_on = false;
-      game.goal_time = millis();
-      resetBall();
+      game.ball.speed.x = -1 * game.ball.speed.x;
     }
 
-    // Improved collision detection for player 2 paddle
+    // Collision detection for player 2 paddle
     if (game.ball.position.x >= game.player2.position.x - 1 &&
-        game.ball.position.x <= game.player2.position.x + game.ball.size / 2) { // ball touching player 2 paddle
+        game.ball.position.x <= game.player2.position.x + game.ball.size / 2
+        && game.ball.speed.x < 0) { // ball touching player 2 paddle
       if (game.ball.position.y <= (game.player2.position.y + game.paddle_size) &&
           game.ball.position.y >= (game.player2.position.y - game.paddle_size)) {
         game.ball.speed.x = -1 * game.ball.speed.x;
@@ -249,35 +242,18 @@ void checkMotion()
     if (game.is_single_player) {
       if (game.player1.oldPos.y != game.player1.position.y) { // player 1 moved, start game
         game.game_on = true;
-        game.time_off = game.time_off + millis() - game.goal_time;
-        if (game.first_start) {
-          // Only for the first game ever: send ball toward player 1 (right side)
-          game.time_off = 0;
-          game.ball.speed.x = 1; // Positive = toward right
-          game.ball.speed.y = random(0, 2) == 0 ? 1 : -1; // Random up/down
-          game.first_start = false; // No longer the first start
-        } else {
-          // For all subsequent games, use normal randomized behavior
-          game.ball.speed.x = random(0, 2) == 0 ? game.ball.speed.x : (-1) * game.ball.speed.x;
-          game.ball.speed.y = random(0, 2) == 0 ? game.ball.speed.y : (-1) * game.ball.speed.y;
-        }
+        set_time();
+        game.ball.speed.x = 1; // Positive = toward right
+        game.ball.speed.y = random(0, 2) == 0 ? 1 : -1; // Random up/down
+         
       }
     }
     else {
       if (game.player1.oldPos.y != game.player1.position.y || game.player2.oldPos.y != game.player2.position.y) {
         game.game_on = true;
-        game.time_off = game.time_off + millis() - game.goal_time;
-        if (game.first_start) {
-          // Only for the first game ever: send ball toward player 1 (right side)
-          game.time_off = 0;
-          game.ball.speed.x = 1; // Positive = toward right
-          game.ball.speed.y = random(0, 2) == 0 ? 1 : -1; // Random up/down
-          game.first_start = false; // No longer the first start
-        } else {
-          // For all subsequent games, use normal randomized behavior
-          game.ball.speed.x = random(0, 2) == 0 ? game.ball.speed.x : (-1) * game.ball.speed.x;
-          game.ball.speed.y = random(0, 2) == 0 ? game.ball.speed.y : (-1) * game.ball.speed.y;
-        }
+        set_time();
+        game.ball.speed.x = 1; // Positive = toward right
+        game.ball.speed.y = random(0, 2) == 0 ? 1 : -1; // Random up/down
       }
     }
   }
@@ -316,23 +292,12 @@ void gameover() {
   soundGame(200, 200);
   delay(50);
   soundGame(400, 50);
-  delay(1050); //fixme change to 9750
+  delay(9750); 
 }
 
-
-
-void resetBall() {
-  game.ball.position.x = SCREEN_WIDTH / 2 + 10;
-  game.ball.position.y = SCREEN_HEIGHT / 2;
-  checkMotion();
-  if (game.game_on) {
-    game.ball.speed.x = random(0, 2) == 0 ? game.ball.speed.x * (-1) : game.ball.speed.x;
-    game.ball.speed.y = random(0, 2) == 0 ? game.ball.speed.y * (-1) : game.ball.speed.y;
-  }
-}
 
 void change_difficulty() {
-  unsigned long current_time = millis() - game.time_off; // time minus all time off (waiting for start)
+  unsigned long current_time = millis(); // time minus all time off (waiting for start)
 
   if (current_time - game.prev_time1 >= 7000 && game.ball.size > 1) {
     game.ball.size = game.ball.size / 2;
@@ -360,13 +325,17 @@ void change_difficulty() {
   }
 }
 
+void set_time(){
+  game.prev_time1 = millis();
+  game.prev_time2 = game.prev_time1;
+  game.prev_time3 = game.prev_time1;
+}
+
 void setup() {
   TV.begin(PAL, SCREEN_WIDTH, SCREEN_HEIGHT);
   startup();
   drawScene();
-  game.prev_time1 = millis();
-  game.prev_time2 = game.prev_time1;
-  game.prev_time3 = game.prev_time1;
+  //set_time();
 }
 
 
@@ -391,8 +360,6 @@ void loop() {
     TV.clear_screen();
     startup();
     drawScene();
-    game.prev_time1 = millis();
-    game.prev_time2 = game.prev_time1;
-    game.prev_time3 = game.prev_time1;
+    set_time();
   }
 }
